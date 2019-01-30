@@ -1,3 +1,7 @@
+test
+hello
+test
+add
 # simple-java-maven-app
 
 This repository is for the
