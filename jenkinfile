@@ -15,7 +15,7 @@ pipeline{
             credentialsId: 'artifactory_credential'
             )
             rtMavenDeployer (
-              id: 'MAVEN_DEPLOYER",
+              id: 'MAVEN_DEPLOYER',
               serverId: "ARTIFACTORY_SERVER",
               releaseRepo: "libs-release-local",
               snapshotRepo: 'libs-snapshot-local'
