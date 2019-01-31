@@ -1,34 +1,51 @@
 pipeline{
   agent any
   
-  tools {
-    maven 'maven'
-    jdk'java1.8.0'
-    }
-    stages {
-    stage('build') {
-    steps {
-    
-     sh "mvn -B -DskipTests clean package"
-     }
-     }
-     stage('test') {
-        steps {
-        sh "mvn test"
+   stages {
+      stage('Clone') {
+            steps {
+        git branch: 'master',url:"https://github.com/visakhchikku/simple-java-maven-app.git"
         }
-        post {
-         always {
-          junit "target/surefire-reports/*.xml"
-          }
-          }
-          }
-     stage('Deploy') {
-          steps {
-          
-          sh 'scp -o StrictHostKeyChecking=no -i /tmp/Mars_POC.pem target/my-app-1.0-SNAPSHOT.jar centos@52.42.159.159:/home/centos'
-          ssh -i /tmp/my.pem centos@54.149.242.5 java -jar /tmp/my-app-1.0-SNAPSHOT.jar
-          //sh "java -jar target/my-app-1.0-SNAPSHOT.jar"
-          }
-          }
+        }
+        stage ('Artifactory configuration') {
+         steps {
+          rtServer (
+            id: "ARTIFACTORY_SERVER",
+            url: 'http://34.210.245.228:8081/artifactory',
+            credentialsId: 'artifactory_credential'
+            )
+            rtMavenDeployer (
+              id: 'MAVEN_DEPLOYER",
+              serverId: "ARTIFACTORY_SERVER",
+              releaseRepo: "libs-release-local",
+              snapshotRepo: 'libs-snapshot-local'
+              )
+              rtMavenResolver (
+               id: 'MAVEN_RESOLVER',
+               serverId: 'ARTIFACTORY_SERVER',
+               releaseRepo: 'libs-release',
+               snapshotRepo: 'libs-snapshot'
+               )
+               }
+               }
+               stage ('Exe Maven') {
+                 steps {
+                    rtMavenRun (
+                        tool: maven,
+                        pom: 'pom.xml',
+                        goals: 'clean install',
+                        deployerId: 'MAVEN_DEPLOYER',
+                        resolverId: 'MAVEN_RESOLVER'
+                        )
+                        }
+                        }
+                        
+                        stage('Publish build info') {
+                          steps {
+                             rtPublishBuildInfo (
+                               serverId: "ARTIFACTORY_SERVER"
+                               )
+                               }
+                               }
      }
 }
